@@ -1,0 +1,17 @@
+Project 
+- Nhận yêu cầu tìm kiếm ảnh (theo tên ảnh) của một người dùng (A)
+Tạo ra một trường Account, lưu vào linklist
+- Gửi lệnh tìm kiếm tới các người dùng khác đang kết nối
+Lưu tất cả người dùng vào linklist.Tìm liệu kê tất cả người dùng trạng thái đang hoạt đông(status =1)
+rồi gửi yêu cầu cho họ.
+- Gửi lại cho A danh sách các người dùng có ảnh cần tìm kiếm
+- Chuyển tiếp tệp tin khi A yêu cầu 
+Ứng dụng người dùng có các chức năng sau:
+- Gửi yêu cầu tìm kiếm một ảnh lên máy chủ
+- Nhận danh sách  các người dùng có ảnh khi yêu cầu tìm kiếm
+- Lựa chọn một người dùng trong danh sách kết quả máy chủ gửi về để yêu cầu tải tệp tin.
+
+
+Buổi sau.
+Tìm hiểu thêm về thiết kết wireframe để thiết kế giao diện.
+Thiết kết các hàm(giao thức) và cấu trúc.

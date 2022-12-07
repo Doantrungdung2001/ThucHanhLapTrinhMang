@@ -19,20 +19,19 @@ int main(int argc , char *argv[]){
     nameHost = gethostbyname(host_name);
     if (nameHost == NULL) { // do some error checking
         herror("gethostbyname"); // herror(), NOT perror()
-        exit(1);
+        printf("Not found information\n");    
+    }else{
+        printf("Official name is: %s\n", nameHost->h_name);
+        addr_list_IP = (struct in_addr **)nameHost->h_addr_list;
+        for(i = 0; addr_list_IP[i] != NULL; i++) {
+            if(i ==0){
+                strcpy(ip ,inet_ntoa(*addr_list_IP[i]));
+                printf(" IP addresses:%s \n", ip);
+            }
+            strcpy(ip ,inet_ntoa(*addr_list_IP[i]));
+            printf(" Alias:%s \n", ip);
+        }    
+        
     }
-
-    printf("Official name is: %s\n", nameHost->h_name);
-    printf("IP addresses: ");
-    addr_list_IP = (struct in_addr **)nameHost->h_addr_list;
-    for(i = 0; addr_list_IP[i] != NULL; i++) {
-        strcpy(ip ,inet_ntoa(*addr_list_IP[i]));
-        printf(" %s \n", ip);
-    }
-    printf("Alias IP: \n");
-    for(i=0;nameHost->h_aliases[i];i++){
-        printf("%s \n",nameHost->h_aliases[i]);
-    }
-    
 
 }

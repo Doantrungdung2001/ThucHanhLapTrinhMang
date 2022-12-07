@@ -17,8 +17,9 @@ int main(int argc , char *argv[]){
 	int client_sock;
 	char buff[BUFF_SIZE], *IPAdress;
 	struct sockaddr_in server_addr;
-	int bytes_sent,bytes_received1,bytes_received2, sin_size;
+	int bytes_sent,bytes_received, sin_size;
 	int Port;
+
 	//Step 1: Construct a UDP socket
 	if ((client_sock=socket(AF_INET, SOCK_DGRAM, 0)) < 0 ){  /* calls socket() */
 		perror("\nError: ");
@@ -28,45 +29,39 @@ int main(int argc , char *argv[]){
 	//Step 2: Define the address of the servers
 	IPAdress = argv[1];
 	Port = atoi(argv[2]);
+	// Clear servaddr
 	bzero(&server_addr, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(Port);
 	server_addr.sin_addr.s_addr = inet_addr(IPAdress);
 	
 	//Step 3: Communicate with server
-	printf("\nInsert string to send:");
-	memset(buff,'\0',(strlen(buff)+1));
-	fgets(buff, BUFF_SIZE, stdin);
+	while(1){
+		printf("\nInsert string to send:");
+		memset(buff,'\0',(strlen(buff)+1));
+		fgets(buff, BUFF_SIZE, stdin);
 	
-	sin_size = sizeof(struct sockaddr);
-	
-	bytes_sent = sendto(client_sock, buff, strlen(buff), 0, (struct sockaddr *) &server_addr, sin_size);
-	if(bytes_sent < 0){
-		perror("Error: ");
-		close(client_sock);
-		return 0;
-	}
-	if(bytes_sent == 1){
-		printf("Wating .......\n");
-	}
-	bytes_received1 = recvfrom(client_sock, buff, BUFF_SIZE - 1, 0,(struct sockaddr *) &server_addr, &sin_size);
-	if(bytes_received1 < 0){
-		perror("Error: ");
-		close(client_sock);
-		return 0;
-	}
-	buff[bytes_received1] = '\0';
-	printf("Reply from server: %s\n", buff);
-
-	bytes_received2 = recvfrom(client_sock, buff, BUFF_SIZE - 1, 0,(struct sockaddr *) &server_addr, &sin_size);
-	if(bytes_received2 < 0){
-		perror("Error: ");
-		close(client_sock);
-		return 0;
-	}
-	buff[bytes_received2] = '\0';
-	printf("Reply from server: %s\n", buff);
+		sin_size = sizeof(struct sockaddr);
 		
+		bytes_sent = sendto(client_sock, buff, strlen(buff), 0, (struct sockaddr *) &server_addr, sin_size);
+		//Waiting for reponse
+		bytes_received = recvfrom(client_sock, buff, BUFF_SIZE - 1, 0,(struct sockaddr *) &server_addr, &sin_size);
+		if(bytes_received < 0){
+			perror("Error: ");
+			close(client_sock);
+			return 0;
+		}
+		buff[bytes_received] = '\0';
+		printf("Reply from server: %s\n", buff);
+		bytes_received = recvfrom(client_sock, buff, BUFF_SIZE - 1, 0,(struct sockaddr *) &server_addr, &sin_size);
+		if(bytes_received < 0){
+			perror("Error: ");
+			close(client_sock);
+			return 0;
+		}
+		buff[bytes_received] = '\0';
+		printf("%s\n", buff);
+	}	
 	close(client_sock);
 	return 0;
 }

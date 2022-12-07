@@ -17,11 +17,11 @@ int main(int argc , char *argv[])
 {
  
 	int server_sock; /* file descriptors */
-	char buff[BUFF_SIZE],temp[BUFF_SIZE],result_digit[100],result_char[100];;
-	int bytes_sent1,bytes_sent2, bytes_received;
+	char buff1[BUFF_SIZE],buff2[BUFF_SIZE],temp[BUFF_SIZE],result_digit[100],result_char[100];;
+	int bytes_sent1,bytes_sent2, bytes_received1,bytes_received2;
 	struct sockaddr_in server; /* server's address information */
-	struct sockaddr_in cliaddr; /* client's address information */
-	int sin_size,Port,n,count=0,check_digit =-1, check_char = -1;
+	struct sockaddr_in cliaddr1,cliaddr2; /* client's address information */
+	int sin_size,Port,n,m,count=0;
 	//Step 1: Construct a UDP socket
 	if ((server_sock=socket(AF_INET, SOCK_DGRAM, 0)) == -1 ){  /* calls socket() */
 		perror("\nError: ");
@@ -45,58 +45,63 @@ int main(int argc , char *argv[])
 	while(1){
 		sin_size=sizeof(struct sockaddr_in);
     		
-		bytes_received = recvfrom(server_sock, buff, BUFF_SIZE-1, 0, (struct sockaddr *) &cliaddr, &sin_size);
+		bytes_received1 = recvfrom(server_sock, buff1, BUFF_SIZE-1, 0, (struct sockaddr *) &cliaddr1, &sin_size);
 		
-		if (bytes_received < 0)
+		if (bytes_received1 < 0)
 			perror("\nError: ");
 		else{
-			buff[bytes_received] = '\0';
+			buff1[bytes_received1] = '\0';
 			n =0;
-			for(int i=0; i<=strlen(buff); i++){
+			for(int i=0; i<=strlen(buff1); i++){
 			/* Kiểm tra ký tự thứ i trong chuỗi đã cho có phải là số hay không*/
 			/* Nếu là số thì lưu vào chuỗi result*/
-				if(isdigit(buff[i])){ 
-					result_digit[n] = buff[i];
+				if(isdigit(buff1[i])){ 
+					result_digit[n] = buff1[i];
 					n++;
 					result_digit[n] = '\0';
-					check_digit =1;
 				}
     		}
-			n=0; 
-			for(int i=0; i<=strlen(buff); ++i){
+			m=0; 
+			for(int i=0; i<=strlen(buff1); ++i){
 			/* Kiểm tra ký tự thứ i trong chuỗi đã cho có phải là số hay không*/
 			/* Nếu là số thì lưu vào chuỗi result*/
-				if(isalpha(buff[i])){
+				if(isalpha(buff1[i])){
 					
-					result_char[n] = buff[i];
-					n++;
-					result_char[n] = '\0';
-					check_char = 1;
+					result_char[m] = buff1[i];
+					m++;
+					result_char[m] = '\0';
 				}
     		}
-			n =0;
-			//printf("[%s:%d]: %s", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port),buff);
-			if(check_digit == 1 && check_char ==1){
-				printf("[%s:%d]: %s\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port),result_digit);
-				printf("[%s:%d]: %s\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port),result_char);
-			}
+
+			bytes_received2 = recvfrom(server_sock, buff2, BUFF_SIZE-1, 0, (struct sockaddr *) &cliaddr1, &sin_size);
+		
+			if (bytes_received2 < 0)
+				perror("\nError: ");
 			else{
-				printf("[%s:%d]: %s", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port),buff);
+				buff1[bytes_received2] = '\0';
+				n =0;
+				for(int i=0; i<=strlen(buff2); i++){
+				/* Kiểm tra ký tự thứ i trong chuỗi đã cho có phải là số hay không*/
+				/* Nếu là số thì lưu vào chuỗi result*/
+					if(isdigit(buff2[i])){ 
+						result_digit[n] = buff2[i];
+						n++;
+						result_digit[n] = '\0';
+					}
+				}
+				m=0; 
+				for(int i=0; i<=strlen(buff2); ++i){
+				/* Kiểm tra ký tự thứ i trong chuỗi đã cho có phải là số hay không*/
+				/* Nếu là số thì lưu vào chuỗi result*/
+					if(isalpha(buff2[i])){
+						
+						result_char[m] = buff2[i];
+						m++;
+						result_char[m] = '\0';
+					}
+				}
 			}
-			
-			count++;
-		}
-		//strcpy(temp,buff);
-		if(count == 2)
-		{
-			/* code */
-			bytes_sent1 = sendto(server_sock, result_digit, bytes_received, 0, (struct sockaddr *) &cliaddr, sin_size ); /* send to the client welcome message */
-			if (bytes_sent1 < 0)
-				perror("\nError: ");
-			bytes_sent2 = sendto(server_sock, result_char, bytes_received, 0, (struct sockaddr *) &cliaddr, sin_size ); /* send to the client welcome message */
-			if (bytes_sent2 < 0)
-				perror("\nError: ");
-		}
+			//strcpy(temp,buff);
 			
 	}
 	
