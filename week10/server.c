@@ -57,6 +57,24 @@ void append(struct Node** head_ref, account new_data){
     return;    
 }
 
+//Tách chuỗi
+char *Tachchuoi(char x[]){
+	char * p;
+    p = strtok(x, ",");
+	return x;
+}
+
+//Đảo chuỗi
+char *Daochuoi(char x[]){
+    for(int i = 0; i<strlen(x)/2; i++){
+        char temp = x[i];
+        x[i] = x[strlen(x)-i-1];
+        x[strlen(x)-i-1] = temp;
+    }
+	return x;
+}
+// Login
+
 /* Handler process signal*/
 void sig_chld(int signo);
 
@@ -65,7 +83,7 @@ void sig_chld(int signo);
 * [IN] sockfd: socket descriptor that connects to client 	
 */
 void echo(int sockfd);
-
+int login(Node *node,char name[],char pass[]);// status = 1 login is succefull, status = -1 -> account is block,else ->  fail
 int write_file(int sockfd);
 
 int main(int argc , char *argv[]){
@@ -74,8 +92,9 @@ int main(int argc , char *argv[]){
 	struct sockaddr_in server; /* server's address information */
 	struct sockaddr_in client; /* client's address information */
 	pid_t pid;
-	int sin_size , Port;
-
+	int sin_size , Port,statuslogin,count =0;
+	int bytes_sent, bytes_received;
+	char buff[BUFF_SIZE],name[50],pass[50],*p,repose_client[BUFF_SIZE],chat_client[BUFF_SIZE],line[BUFF_SIZE];
 	Node *newNode = (Node*) malloc(sizeof(Node));
 	newNode = NULL;
 	FILE *fp;
@@ -92,13 +111,13 @@ int main(int argc , char *argv[]){
 		append(&newNode,AC_STUDENT);
 	}
 	fclose(fp);
-	/*
+/*
 	while(newNode  != NULL){
-		    printf("%-20s  %-11s   %-25d\n",newNode -> data.name, newNode->data.password, newNode->data.status);
+		    printf("%-20s %-20ld %-11s %-11ld  %-25d\n",newNode -> data.name,strlen(newNode -> data.name),newNode->data.password,strlen(newNode -> data.password),newNode->data.status);
 		    newNode = newNode->next;
 
     }
-	*/
+*/
 	if ((listen_sock=socket(AF_INET, SOCK_STREAM, 0)) == -1 ){  /* calls socket() */
 		printf("socket() error\n");
 		return 0;
@@ -141,7 +160,89 @@ int main(int argc , char *argv[]){
 		if(pid  == 0){
 			close(listen_sock);
 			printf("You got a connection from %s\n", inet_ntoa(client.sin_addr)); /* prints client's IP */
-			echo(conn_sock);						
+			//received
+			bytes_received = recv(conn_sock, buff, BUFF_SIZE, 0); //blocking
+			if (bytes_received < 0)
+				perror("\nError: ");
+
+			buff[bytes_received] ='\0';
+
+			//Phân tích chuỗi tài khoản và mật khẩu được gửi từ client
+			// Tai khoan
+			strcpy(name,buff);
+			Tachchuoi(name);
+
+			//Mat khau
+			strcpy(pass,buff);
+			Tachchuoi(Daochuoi(pass));
+			Daochuoi(pass);
+			
+			//printf("%s %ld\n",name,strlen(name));
+			//printf("%s %ld\n",pass,strlen(pass));
+
+			//login
+			statuslogin =login(newNode,name,pass);
+			//printf("%d",statuslogin);
+
+			if(statuslogin == 1){
+				//Gửi trạng thái đăng nhập cho client
+				strcpy(repose_client,"1");
+				bytes_sent = send(conn_sock, repose_client, strlen(repose_client), 0); // echo to the client 
+				if (bytes_sent < 0)
+					perror("\nError: ");
+
+				//Nhận đoạn chat từ client
+				bytes_received = recv(conn_sock, chat_client,BUFF_SIZE, 0); //blocking
+				if (bytes_received < 0)
+					perror("\nError: ");
+				chat_client[bytes_received] ='\0';
+
+				//Ghi vào trong file
+				fp = fopen("groupchat.txt", "a+");
+				fprintf(fp, "%s:%s", name,chat_client);
+				fclose(fp);
+
+				//Gủi lại đoạn chat cho client
+				fp = fopen("groupchat.txt", "r");
+				printf("\n------Chat box-------\n");
+				while (!feof(fp)){
+					fgets(chat_client,BUFF_SIZE,fp);
+					printf("%s",chat_client);
+					count++;
+				}
+				fclose(fp);
+				sprintf(line, "%d\n", count);
+				//printf("%s",line);
+				bytes_sent = send(conn_sock,line,strlen(line), 0); // echo to the client 
+				if (bytes_sent < 0)
+					perror("\nError: ");
+					
+				fp = fopen("groupchat.txt", "r");
+				while (!feof(fp)){
+					fgets(chat_client,BUFF_SIZE,fp);
+					bytes_sent = send(conn_sock,chat_client,BUFF_SIZE, 0); // echo to the client 
+					if (bytes_sent < 0)
+						perror("\nError: ");
+				}
+				fclose(fp);
+
+			}else if(statuslogin == 2){
+				strcpy(repose_client,"2");
+				bytes_sent = send(conn_sock, repose_client, strlen(repose_client), 0); // echo to the client 
+				if (bytes_sent < 0)
+					perror("\nError: ");
+			}else{
+				strcpy(repose_client,"3\n");
+				bytes_sent = send(conn_sock, repose_client, strlen(repose_client), 0); // echo to the client 
+				if (bytes_sent < 0)
+					perror("\nError: ");
+			}
+			//send
+			bytes_sent = send(conn_sock, buff, bytes_received, 0); // echo to the client 
+			if (bytes_sent < 0)
+				perror("\nError: ");
+			
+			//echo(conn_sock);						
 			exit(0);
 		}
 		
@@ -160,6 +261,36 @@ void sig_chld(int signo){
 	while((pid = waitpid(-1, &stat, WNOHANG))>0)
 		printf("\nChild %d terminated\n",pid);
 }
+
+int login(Node *node,char name[],char pass[]){	
+	int count=0;
+	int status;
+	while (node != NULL){
+		if(strcmp(node->data.name,name) == 0){
+			//printf(" tim thay\n");
+			if(strcmp(node->data.password,pass) == 0){
+				if(node->data.status == 1){
+					printf("Login is successfull!!\n");
+					status = 1;
+					//break;
+				}else{
+					printf("Account is blocked or inactive!!!!!!\n");
+					status = 2;
+					break;
+				}
+			}else{
+				printf("Password is not correct!!!\n");
+				status = 3;
+
+			}
+		}
+		node = node->next;
+		
+	}
+	return status;
+}
+
+
 
 void echo(int sockfd) {
 	char name[BUFF_SIZE],pass[BUFF_SIZE];

@@ -18,11 +18,11 @@ void send_file(FILE *fp, int sockfd);
 
 int main(int argc ,char *argv[]){
 	int client_sock,Port;
-	char buff[BUFF_SIZE + 1],*IPAdress ,*name ,*pass;
+	char buff[BUFF_SIZE + 1],*IPAdress ,*name ,*pass,account[100],s2[50];
 	struct sockaddr_in server_addr; /* server's address information */
-	int msg_len, bytes_sent, bytes_received;
+	int msg_len, bytes_sent, bytes_received ,count =0;
 	FILE *fp;
-	
+	char statuslogin[3];
 	//Step 1: Construct socket
 	client_sock = socket(AF_INET,SOCK_STREAM,0);
 	
@@ -44,26 +44,60 @@ int main(int argc ,char *argv[]){
 	}
 	
 	//Step 4: Communicate with server
-
+	//Nối tài khoản và mật khẩu thành một chuỗi để gửi cho client(Tài khoản và mật khẩu ngăn cách với nhau bởi dấu " , ")
+	strcpy(account,name);
+	strcat(account,",");
+	strcpy(s2,pass);
+	strcat(account,s2);
 	//send username	
-	bytes_sent = send(client_sock, name, strlen(name), 0);
-	if(bytes_sent < 0)
-		perror("\nError: ");
-
-	//send password	
-	bytes_sent = send(client_sock, pass, strlen(pass), 0);
+	bytes_sent = send(client_sock, account, strlen(account), 0);
 	if(bytes_sent < 0)
 		perror("\nError: ");
 	
-	//received
-	bytes_received = recv(client_sock, buff, BUFF_SIZE, 0);
+	//Nhận trạng thái đăng nhập từ server
+	bytes_received = recv(client_sock, statuslogin, strlen(statuslogin), 0);
 	if (bytes_received < 0)
-			perror("\nError: ");
+		perror("\nError: ");
 	else if (bytes_received == 0)
-			printf("Connection closed.\n");
+		printf("Connection closed.\n");
+
+	//Kiểm tra trạng thái đăng nhập
+	if(strcmp(statuslogin,"1") == 0){
 		
-	buff[bytes_received] = '\0';
-	printf("Reply from server: %s", buff);
+		printf("Login is successfull!!\n");
+		printf("\n-------START---------\n");
+		//Bắt đầu chat
+		printf("Me : ");
+		fgets(buff, sizeof(buff), stdin);
+		//printf("%s",buff);
+		bytes_sent = send(client_sock, buff,BUFF_SIZE, 0);
+		if(bytes_sent < 0)
+			perror("\nError: ");
+
+		memset(buff,'\0',BUFF_SIZE);
+		bytes_received = recv(client_sock, buff, BUFF_SIZE, 0);
+		if (bytes_received < 0)
+			perror("\nError: ");
+		buff[bytes_received] = '\0';
+		count = atoi(buff);
+		
+		//Nhận đoạn chat của những người khác
+		for(int i=1;i<count;i++){
+			bytes_received = recv(client_sock, buff, BUFF_SIZE, 0);
+			if (bytes_received < 0)
+				perror("\nError: ");
+			buff[bytes_received] = '\0';
+			printf("%s\n", buff);
+		}
+		
+		
+		
+	}else if(strcmp(statuslogin,"2") == 0){
+		printf("Account is blocked or inactive!!!!!!\n");
+	}else{
+		printf("Login is fail!!\n");
+	}	
+	
 
 	//Step 4: Close socket
 	

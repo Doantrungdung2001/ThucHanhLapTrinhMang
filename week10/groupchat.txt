@@ -1,1 +1,6 @@
-doan trung dung sinh vien truong dhbkhn
+hust:xin chao
+dung:toi la dung
+hust:sao vay
+hust:gui cho toi di
+hust:bye 
+hust:bye bye
