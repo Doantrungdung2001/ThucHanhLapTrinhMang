@@ -75,13 +75,14 @@ int main(int argc , char *argv[])
         }
 		fwrite(buffer,buffer_size,1,fp);
 		fclose(fp);
- 	} while(0);	
+ 	} while(0);
+
 	bytes_received = recv(client_sock, recv_data, BUFF_SIZE-1, 0);
-	if(bytes_received <= 0){
+	if(bytes_received < 0){
 		printf("\nError!Cannot receive data from sever!\n");
 	}else{
 		recv_data[bytes_received] = '\0';
-		printf("%s", recv_data);
+		printf("Give done !!!");
 	}
 	
 	close(client_sock);
